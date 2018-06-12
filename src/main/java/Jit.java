@@ -23,11 +23,17 @@ public class Jit {
         Path path = Paths.get(fileToAdd);
         stagingArea.add(path);
         Helper.serialize(stagingArea);
-        //check, that this shit does writing, not appending
+        //check, that this shit rewrites .ser file, not appends
     }
 
-    public static void remove() {
+    public static void remove(String fileToAdd) throws IOException, ClassNotFoundException {
+        MerkleTree stagingArea;
+        stagingArea = (MerkleTree) Helper.deserialize();
 
+        Path path = Paths.get(fileToAdd);
+        stagingArea.remove(path);
+        Helper.serialize(stagingArea);
+        //check, that this shit rewrites .ser file, not appends
     }
 
     public static void commit() {
