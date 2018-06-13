@@ -1,4 +1,4 @@
-import java.io.IOError;
+/*import java.io.IOError;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -47,4 +47,4 @@ public class MerkleTree implements Serializable {
 
          }
     }
-}
+}*/

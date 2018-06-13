@@ -8,7 +8,35 @@ import java.util.List;
 
 public class Jit {
 
-    public static void init() throws IOException
+    public static void main (String[] args) {
+        try {
+            if (args.length==0) {
+                commandHelp();
+                return;
+            }
+            JitCommand command = JitCommand.valueOf(args[0].toUpperCase());
+            switch (command) {
+                case INIT: init();
+            }
+        }
+        catch (IllegalArgumentException ex) {
+            commandHelp();
+        }
+    }
+
+    public static void commandHelp() {
+        System.out.println("List of the supported commands:\n");
+        for (JitCommand command : JitCommand.values()) {
+            System.out.println(command + "\n");
+        }
+    }
+    
+    public static void init() {
+        new File("./.jit/objects").mkdirs();
+        new File("./.jit/staging").mkdirs();
+    }
+
+    /*public static void init() throws IOException
     {
         new File("./.jit/objects").mkdirs();
         new File("./.jit/staging").mkdirs();
@@ -55,5 +83,5 @@ public class Jit {
 
     //handle exceptions (there is an option for closing streams?)
     //backup, so this shit doesn't delete itself
-    //just play with console java to make sure, that all the file stuff works as necessary
+    //just play with console java to make sure, that all the file stuff works as necessary*/
 }
