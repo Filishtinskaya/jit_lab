@@ -16,9 +16,10 @@ public class MerkleTree implements Serializable {
 
     MerkleTree() {
         Directory root = new Directory();
-        root.name = Paths.get(".").toString();
+        root.name = Paths.get("").toAbsolutePath().toString();
         root.hash = Helper.byteArrayToHexString(root.name.getBytes());
         root.parent = null;
+        curRoot = root;
         allElements.add(root);
     }
 
@@ -36,7 +37,7 @@ public class MerkleTree implements Serializable {
     }
 
     class Directory extends FilesystemElement {
-        private List<FilesystemElement> children;
+        private List<FilesystemElement> children = new LinkedList<FilesystemElement>();
 
         void updateHash() {
             hash = Helper.byteArrayToHexString(children.stream().map(c -> c.hash).reduce("", (s1, s2) -> s1+s2).getBytes());
@@ -47,7 +48,7 @@ public class MerkleTree implements Serializable {
         private byte[] data;
 
         FileNode (Path path) throws IOException {
-            name = path.toString();
+            name = path.toAbsolutePath().toString();
             data = Files.readAllBytes(path);
             hash = Helper.byteArrayToHexString(data);
             //parent = path.;
@@ -57,17 +58,18 @@ public class MerkleTree implements Serializable {
     //has only functionality of adding single files, not directories
     public void add(String toAdd) {
         try {
-            Path path = Paths.get(toAdd);
+            //System.out.println(curRoot.name + "\n");
+            Path path = Paths.get(toAdd).toAbsolutePath();
             FilesystemElement f = new FileNode(path);
-            String parName = path.getParent().toString();
 
             FilesystemElement temp = f;
 
             //adding file to directory structure
             allElements.add(f);
             do {
-                final String finalParName = parName;//for lambda
-                Optional<FilesystemElement> parOpt = allElements.stream().filter(n -> n.name.equals(finalParName)).findFirst(); //try to find parent directory of the file we are adding
+                final String parName = path.getParent().toAbsolutePath().toString(); //for lambda
+                //System.out.println(allElements.get(0).name + " " + parName + "\n");
+                Optional<FilesystemElement> parOpt = allElements.stream().filter(n -> n.name.equals(parName)).findFirst(); //try to find parent directory of the file we are adding
                 if (parOpt.isPresent()) {
                     Directory parDir = (Directory) parOpt.get();
                     temp.parent = parDir;
@@ -76,24 +78,23 @@ public class MerkleTree implements Serializable {
                 } else {
                     Directory d = new Directory();
                     d.name = parName;
-                    d.children.add(f);
+                    d.children.add(temp);
                     temp.parent = d;
                     allElements.add(d);
 
-                    path = path.getParent();
-                    parName = path.getParent().toString();;
+                    path = path.getParent().toAbsolutePath();
                     temp = d;
                 }
             }
             while (true);
 
             //updating hashes
-            Directory tempDir = (Directory) f.parent;
+            Directory tempDir = f.parent;
             do {
                 tempDir.updateHash();
                 tempDir = tempDir.parent;
             }
-            while (f!=curRoot);
+            while (tempDir!=null);
 
         }
         catch (IOException ex) {

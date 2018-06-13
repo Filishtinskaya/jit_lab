@@ -7,7 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public class Helper {
-    private static final String SERIALIZATION_PATH = "./.jit/staging/staging.ser";
+    /*private static final String SERIALIZATION_PATH = "./.jit/staging/staging.ser";
 
     static void serialize(Object obj) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(new File(SERIALIZATION_PATH)));
@@ -20,7 +20,7 @@ public class Helper {
         Object obj = in.readObject();
         in.close();
         return obj;
-    }
+    }*/
 
     /*static void restore (String hash, String path) throws IOException {
         List<String> content = Files.readAllLines(Paths.get("./jit/objects" + hash));

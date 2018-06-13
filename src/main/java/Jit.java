@@ -1,5 +1,4 @@
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,7 +15,7 @@ public class Jit {
             }
             JitCommand command = JitCommand.valueOf(args[0].toUpperCase());
             switch (command) {
-                case INIT: init();
+                case INIT: init(); break;
                 case ADD:
                     if (args.length >= 2)
                         add(args[1]);
@@ -38,31 +37,54 @@ public class Jit {
     }
 
     public static void init() {
+        System.out.println ("Initialization of jit-directory.\n");
         new File("./.jit/objects").mkdirs();
         new File("./.jit/staging").mkdirs();
     }
 
     public static void add(String fileToAdd) {
-
-    }
-
-    /*public static void init() throws IOException
-    {
-        new File("./.jit/objects").mkdirs();
-        new File("./.jit/staging").mkdirs();
-        MerkleTree stagingArea = new MerkleTree();
-        Helper.serialize(stagingArea);
-    }
-
-    public static void add(String fileToAdd) throws IOException, ClassNotFoundException {
         MerkleTree stagingArea;
-        stagingArea = (MerkleTree) Helper.deserialize();
 
-        Path path = Paths.get(fileToAdd);
-        stagingArea.add(path);
-        Helper.serialize(stagingArea);
-        //check, that this shit rewrites .ser file, not appends
+        try {
+            if (Files.exists(Paths.get(SERIALIZATION_PATH)))
+                stagingArea = (MerkleTree) deserialize();
+            else
+               stagingArea = new MerkleTree();
+
+            stagingArea.add(fileToAdd);
+            serialize(stagingArea);
+            //check, that this shit rewrites .ser file, not appends
+
+        }
+        catch (IOException ex) {
+            System.out.println("Something went wrong with [de]serialization(files IO).");
+            ex.printStackTrace();
+        }
+        catch (ClassNotFoundException ex) {
+            System.out.println("Something went wrong with [de]serialization(class not found).");
+            ex.printStackTrace();
+        }
+
+
+
     }
+
+    private static final String SERIALIZATION_PATH = "./.jit/staging/staging.ser";
+
+    static void serialize(Object obj) throws IOException {
+        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(new File(SERIALIZATION_PATH)));
+        out.writeObject(obj);
+        out.close();
+    }
+
+    static Object deserialize() throws IOException, ClassNotFoundException {
+        ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZATION_PATH));
+        Object obj = in.readObject();
+        in.close();
+        return obj;
+    }
+
+    /*
 
     public static void remove(String fileToAdd) throws IOException, ClassNotFoundException {
         MerkleTree stagingArea;
