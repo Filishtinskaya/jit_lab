@@ -10,13 +10,19 @@ public class Jit {
 
     public static void main (String[] args) {
         try {
-            if (args.length==0) {
+            if (args.length == 0) {
                 commandHelp();
                 return;
             }
             JitCommand command = JitCommand.valueOf(args[0].toUpperCase());
             switch (command) {
                 case INIT: init();
+                case ADD:
+                    if (args.length >= 2)
+                        add(args[1]);
+                    else
+                        System.out.println("Specify file for adding.\n");
+                    break;
             }
         }
         catch (IllegalArgumentException ex) {
@@ -30,10 +36,14 @@ public class Jit {
             System.out.println(command + "\n");
         }
     }
-    
+
     public static void init() {
         new File("./.jit/objects").mkdirs();
         new File("./.jit/staging").mkdirs();
+    }
+
+    public static void add(String fileToAdd) {
+
     }
 
     /*public static void init() throws IOException

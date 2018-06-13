@@ -1,4 +1,4 @@
-/*import java.io.*;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,7 +22,7 @@ public class Helper {
         return obj;
     }
 
-    static void restore (String hash, String path) throws IOException {
+    /*static void restore (String hash, String path) throws IOException {
         List<String> content = Files.readAllLines(Paths.get("./jit/objects" + hash));
         //i just hope, that user won't write files, starting with Commit or Directory
         if (content.get(0).startsWith("Commit"))
@@ -40,7 +40,7 @@ public class Helper {
             for (String line : content)
                 Files.write(f.toPath(), line.getBytes());
         }
-    }
+    }*/
 
 
 
@@ -62,4 +62,4 @@ public class Helper {
         }
         return null;
     }
-}*/
+}
