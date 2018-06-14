@@ -10,8 +10,9 @@ public class MerkleTree implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Directory curRoot;
+
     //Collection of all the nodes in the tree for convenience (maybe, not a set?)
-    private List<FilesystemElement> allElements = new LinkedList<FilesystemElement> ();
+    private List<Node> allElements = new LinkedList<Node> ();
 
     MerkleTree() {
         Directory root = new Directory();
@@ -24,33 +25,41 @@ public class MerkleTree implements Serializable {
 
     abstract class Node implements Serializable {
         protected String name, hash;
-    }
-
-    class Commit extends Node {
-        private String commitMessage;
-        private Directory root;
-    }
-
-    abstract class FilesystemElement extends Node {
         protected Directory parent;
     }
 
-    class Directory extends FilesystemElement {
-        private List<FilesystemElement> children = new LinkedList<FilesystemElement>();
+    class Directory extends Node {
+        private List<Node> children = new LinkedList<Node>();
 
         void updateHash() {
-            hash = Helper.byteArrayToHexString(children.stream().map(c -> c.hash).reduce("", (s1, s2) -> s1+s2).getBytes());
+            String toHash = name + children.stream().map(c->c.hash).reduce("", (s1, s2) -> s1+s2);
+            hash = Helper.byteArrayToHexString(toHash.getBytes());
+        }
+
+        public List<Node> getChildren() {
+            return children;
         }
     }
 
-    class FileNode extends FilesystemElement {
+    class FileNode extends Node {
         private byte[] data;
 
         FileNode (Path path) throws IOException {
             name = path.toAbsolutePath().toString();
             data = Files.readAllBytes(path);
-            hash = Helper.byteArrayToHexString(data);
-            //parent = path.;
+
+            byte[] nameBytes = name.getBytes();
+            byte[] toHash = new byte[nameBytes.length + data.length];
+            for (int i=0; i<nameBytes.length; i++)
+                toHash[i] = nameBytes[i];
+            for (int i=0; i<data.length; i++)
+                toHash[i+nameBytes.length] = data[i];
+
+            hash = Helper.byteArrayToHexString(toHash);
+        }
+
+        public byte[] getData() {
+            return data;
         }
     }
 
@@ -59,16 +68,16 @@ public class MerkleTree implements Serializable {
         try {
             //System.out.println(curRoot.name + "\n");
             Path path = Paths.get(toAdd).toAbsolutePath();
-            FilesystemElement f = new FileNode(path);
+            Node f = new FileNode(path);
 
-            FilesystemElement temp = f;
+            Node temp = f;
 
             // 1)adding file to directory structure
             allElements.add(f);
             do {
                 final String parName = path.getParent().toAbsolutePath().toString(); //for lambda
                 //System.out.println(allElements.get(0).name + " " + parName + "\n");
-                Optional<FilesystemElement> parOpt = allElements.stream().filter(n -> n.name.equals(parName)).findFirst(); //try to find parent directory of the file we are adding
+                Optional<Node> parOpt = allElements.stream().filter(n -> n.name.equals(parName)).findFirst(); //try to find parent directory of the file we are adding
                 if (parOpt.isPresent()) {
                     Directory parDir = (Directory) parOpt.get();
                     temp.parent = parDir;
@@ -104,7 +113,7 @@ public class MerkleTree implements Serializable {
     public void remove (String toRemove) {
         try {
             String toRemoveAbsolute = Paths.get(toRemove).toAbsolutePath().toString();
-            FilesystemElement elementToRemove = allElements.stream().filter(n -> n.name.equals(toRemoveAbsolute)).findFirst().get();
+            Node elementToRemove = allElements.stream().filter(n -> n.name.equals(toRemoveAbsolute)).findFirst().get();
             allElements.remove(elementToRemove);
             Directory tempDir = elementToRemove.parent;
             do {
@@ -121,5 +130,9 @@ public class MerkleTree implements Serializable {
             System.out.println("ELement to remove was not found in a staging area.");
             return;
         }
+    }
+
+    public List<Node> getAllElements() {
+        return allElements;
     }
 }
