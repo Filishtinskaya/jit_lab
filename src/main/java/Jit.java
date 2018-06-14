@@ -46,14 +46,13 @@ public class Jit {
         MerkleTree stagingArea;
 
         try {
-            if (Files.exists(Paths.get(SERIALIZATION_PATH)))
-                stagingArea = (MerkleTree) deserialize();
+            if (Files.exists(Paths.get(Helper.getSerializationPath())))
+                stagingArea = (MerkleTree) Helper.deserialize();
             else
                stagingArea = new MerkleTree();
 
             stagingArea.add(fileToAdd);
-            serialize(stagingArea);
-            //check, that this shit rewrites .ser file, not appends
+            Helper.serialize(stagingArea);
 
         }
         catch (IOException ex) {
@@ -69,20 +68,7 @@ public class Jit {
 
     }
 
-    private static final String SERIALIZATION_PATH = "./.jit/staging/staging.ser";
 
-    static void serialize(Object obj) throws IOException {
-        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(new File(SERIALIZATION_PATH)));
-        out.writeObject(obj);
-        out.close();
-    }
-
-    static Object deserialize() throws IOException, ClassNotFoundException {
-        ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZATION_PATH));
-        Object obj = in.readObject();
-        in.close();
-        return obj;
-    }
 
     /*
 

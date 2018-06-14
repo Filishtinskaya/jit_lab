@@ -1,3 +1,3 @@
 public enum JitCommand {
-    INIT, ADD, REMOVE, COMMIT, CHECKOUT
+    INIT, ADD, REMOVE, COMMIT, CHECKOUT, DEBUG
 }
