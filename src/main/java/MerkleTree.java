@@ -3,12 +3,11 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class MerkleTree implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Directory curRoot;
     //Collection of all the nodes in the tree for convenience (maybe, not a set?)
@@ -64,7 +63,7 @@ public class MerkleTree implements Serializable {
 
             FilesystemElement temp = f;
 
-            //adding file to directory structure
+            // 1)adding file to directory structure
             allElements.add(f);
             do {
                 final String parName = path.getParent().toAbsolutePath().toString(); //for lambda
@@ -88,7 +87,7 @@ public class MerkleTree implements Serializable {
             }
             while (true);
 
-            //updating hashes
+            // 2)updating hashes
             Directory tempDir = f.parent;
             do {
                 tempDir.updateHash();
@@ -99,6 +98,28 @@ public class MerkleTree implements Serializable {
         }
         catch (IOException ex) {
             System.out.println ("Error while reading the file.\n");
+        }
+    }
+
+    public void remove (String toRemove) {
+        try {
+            String toRemoveAbsolute = Paths.get(toRemove).toAbsolutePath().toString();
+            FilesystemElement elementToRemove = allElements.stream().filter(n -> n.name.equals(toRemoveAbsolute)).findFirst().get();
+            allElements.remove(elementToRemove);
+            Directory tempDir = elementToRemove.parent;
+            do {
+                tempDir.children.remove(elementToRemove);
+                if (tempDir.children.size() == 0 && tempDir!=curRoot)
+                    allElements.remove(tempDir);
+                else
+                    tempDir.updateHash();
+                tempDir = tempDir.parent;
+            }
+            while (tempDir!=null);
+        }
+        catch (NoSuchElementException ex) {
+            System.out.println("ELement to remove was not found in a staging area.");
+            return;
         }
     }
 }
