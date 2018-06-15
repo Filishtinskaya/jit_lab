@@ -1,5 +1,6 @@
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -26,19 +27,25 @@ public class Jit {
                     if (args.length >= 2)
                         modify(args[1], ModificationType.ADDING);
                     else
-                        System.out.println("You have to specify file for adding.\n");
+                        System.out.println("You have to specify file for adding.");
                     break;
                 case REMOVE:
                     if (args.length >= 2)
                         modify(args[1], ModificationType.REMOVING);
                     else
-                        System.out.println("You have to specify file for removing.\n");
+                        System.out.println("You have to specify file for removing.");
                     break;
                 case COMMIT:
                     if (args.length >= 2)
                         commit (args[1]);
                     else
-                        System.out.println("You have to write commit message. \n");
+                        System.out.println("You have to write commit message.");
+                    break;
+                case CHECKOUT:
+                    if (args.length >= 2)
+                        checkout(args[1]);
+                    else
+                        System.out.println("You have to give the hash of the commit.");
             }
         } catch (IllegalArgumentException ex) {
             commandHelp();
@@ -46,14 +53,14 @@ public class Jit {
     }
 
     private static void commandHelp() {
-        System.out.println("List of the supported commands:\n");
+        System.out.println("List of the supported commands:");
         for (JitCommand command : JitCommand.values()) {
             System.out.println(command + "\n");
         }
     }
 
     private static void init() {
-        System.out.println("Initialization of jit-directory.\n");
+        System.out.println("Initialization of jit-directory.");
         new File("./.jit/objects").mkdirs();
         new File("./.jit/staging").mkdirs();
     }
@@ -70,11 +77,11 @@ public class Jit {
 
             switch (mode) {
                 case ADDING:
-                    System.out.println("Adding file to staging area.\n");
+                    System.out.println("Adding file to staging area.");
                     stagingArea.add(fileToModify);
                     break;
                 case REMOVING:
-                    System.out.println("Removing file of the staging area.\n");
+                    System.out.println("Removing file of the staging area.");
                     stagingArea.remove(fileToModify);
                     break;
             }
@@ -106,7 +113,7 @@ public class Jit {
             String commitHash = Helper.byteArrayToHexString(root.hash.getBytes());
             File commitFile = new File(OBJECTS_PATH + commitHash);
             //Files.createFile(commitFile.toPath());
-            String commitContent = message + "\n" + "Directory " + root.hash + " " + root.name + "\n";
+            String commitContent = message + "\n" + "Directory  " + root.hash + "  " + root.name + "\n";
             Files.write(commitFile.toPath(), commitContent.getBytes());
 
             for (MerkleTree.Node el : toCommit) {
@@ -117,11 +124,11 @@ public class Jit {
                     MerkleTree.Directory dir = (MerkleTree.Directory) el;
                     for (MerkleTree.Node child : dir.getChildren()) {
                         if (child.getClass() == MerkleTree.Directory.class)
-                            fileContent += "Directory ";
+                            fileContent += "Directory  ";
                         else
-                            fileContent += "File ";
+                            fileContent += "File  ";
 
-                        fileContent += child.hash + " " + child.name + "\n";
+                        fileContent += child.hash + "  " + child.name + "\n";
                     }
                     Files.write(objectFile.toPath(), fileContent.getBytes());
                 }
@@ -140,19 +147,49 @@ public class Jit {
             ex.printStackTrace();
         }
     }
-}
-    /*
 
-    public static void checkout(String commitHash) throws IOException {
-        //delete serializable?
+    private static void checkout (String commit) {
+        try {
+            Path commitObj = Paths.get(OBJECTS_PATH + commit);
 
-        //deleting all the files in the workspace
-        File dir = new File(".");
-        File[] toDelete = dir.listFiles(f -> f.getName()!=".jit");
-        //i just hope that this deletes a directory with all content
-        for (File f : toDelete) {
-            f.delete();
+
+            List<String> commitContent = Files.readAllLines(commitObj);
+
+            Helper.clearWorkspace();
+
+            System.out.println ("Checking out commit \"" + commitContent.get(0) + '"' + "\n");
+            String[] rootInfo = commitContent.get(1).split("  ");
+            //rootInfo[1] //hash of the root directory - do we need it at all
+            //rootInfo[2] //name of the root directory
+            //Files.createDirectory(Paths.get(rootInfo[2]));
+
+            restoreDirectory(rootInfo[1]);
+        } catch (IOException ex) {
+            System.out.println("Something went wrong with object files IO.");
+            ex.printStackTrace();
         }
-        Helper.restore(commitHash, ".");
     }
-}*/
+
+    static void restoreDirectory (String hash) {
+        try {
+            List<String> content = Files.readAllLines(Paths.get(OBJECTS_PATH + hash));
+            content.remove(0);
+            for (String line : content) {
+                System.out.println(line);
+                String[] childInfo = line.split("  ");
+                if (childInfo[0].equals("Directory")) {
+                    Files.createDirectory(Paths.get(childInfo[2]));
+                    restoreDirectory(childInfo[1]);
+                }
+                else {
+                    Files.copy(Paths.get(OBJECTS_PATH + childInfo[1]), Paths.get(childInfo[2]));
+                }
+            }
+        }
+        catch (IOException ex) {
+            System.out.println("Something went wrong with object files IO.");
+            ex.printStackTrace();
+        }
+
+    }
+}

@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
 import java.util.List;
 
 public class Helper {
@@ -23,32 +24,28 @@ public class Helper {
         return obj;
     }
 
-    public static String getSerializationPath() {
-        return SERIALIZATION_PATH;
+    static void clearWorkspace() throws IOException{
+        Path pathToBeDeleted = Paths.get(".");
+        Files.walk(pathToBeDeleted)
+                .sorted(Comparator.reverseOrder())
+                .filter(path -> !path.toString().contains(".jit"))
+                .map(Path::toFile)
+                .forEach(File::delete);
+
+        Files.list(Paths.get(".")).filter(p -> !p.toString().endsWith(".jit")).forEach(p -> {
+            try{
+                Files.delete(p);
+            }
+            catch (IOException ex){
+                System.out.println ("Error while cleaning workspace\n");
+                ex.printStackTrace();
+            }
+        });
     }
 
-
-    /*static void restore (String hash, String path) throws IOException {
-        List<String> content = Files.readAllLines(Paths.get("./jit/objects" + hash));
-        //i just hope, that user won't write files, starting with Commit or Directory
-        if (content.get(0).startsWith("Commit"))
-            content.remove(0);
-        if (content.get(0).startsWith("Directory")) {
-            content.remove(0);
-            for (String line : content) {
-                //ok, now it gets a bit tricky
-                String[] pars = l.split (" ");
-                restore(pars[1], path + '/' + pars[2]);
-            }
-        }
-        else {
-            File f = new File(path);
-            for (String line : content)
-                Files.write(f.toPath(), line.getBytes());
-        }
-    }*/
-
-
+    static String getSerializationPath() {
+        return SERIALIZATION_PATH;
+    }
 
     public static String byteArrayToHexString(byte[] content) {
 
