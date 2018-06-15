@@ -1,0 +1,1 @@
+enum ModificationType {ADDING, REMOVING}

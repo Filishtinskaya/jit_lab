@@ -16,51 +16,11 @@ public class MerkleTree implements Serializable {
 
     MerkleTree() {
         Directory root = new Directory();
-        root.name = Paths.get("").toAbsolutePath().toString();
-        root.hash = Helper.byteArrayToHexString(root.name.getBytes());
-        root.parent = null;
+        root.setName(Paths.get("").toAbsolutePath().toString());
+        root.setHash(Helper.byteArrayToHexString(root.getName().getBytes()));
+        root.setParent(null);
         curRoot = root;
         allElements.add(root);
-    }
-
-    abstract class Node implements Serializable {
-        protected String name, hash;
-        protected Directory parent;
-    }
-
-    class Directory extends Node {
-        private List<Node> children = new LinkedList<Node>();
-
-        void updateHash() {
-            String toHash = name + children.stream().map(c->c.hash).reduce("", (s1, s2) -> s1+s2);
-            hash = Helper.byteArrayToHexString(toHash.getBytes());
-        }
-
-        public List<Node> getChildren() {
-            return children;
-        }
-    }
-
-    class FileNode extends Node {
-        private byte[] data;
-
-        FileNode (Path path) throws IOException {
-            name = path.toAbsolutePath().toString();
-            data = Files.readAllBytes(path);
-
-            byte[] nameBytes = name.getBytes();
-            byte[] toHash = new byte[nameBytes.length + data.length];
-            for (int i=0; i<nameBytes.length; i++)
-                toHash[i] = nameBytes[i];
-            for (int i=0; i<data.length; i++)
-                toHash[i+nameBytes.length] = data[i];
-
-            hash = Helper.byteArrayToHexString(toHash);
-        }
-
-        public byte[] getData() {
-            return data;
-        }
     }
 
     //has only functionality of adding single files, not directories
@@ -68,39 +28,51 @@ public class MerkleTree implements Serializable {
         try {
             //System.out.println(curRoot.name + "\n");
             Path path = Paths.get(toAdd).toAbsolutePath();
-            Node f = new FileNode(path);
+            final String toAddName = path.toString();
 
-            Node temp = f;
+            FileNode f;
 
-            // 1)adding file to directory structure
-            allElements.add(f);
-            do {
-                final String parName = path.getParent().toAbsolutePath().toString(); //for lambda
-                //System.out.println(allElements.get(0).name + " " + parName + "\n");
-                Optional<Node> parOpt = allElements.stream().filter(n -> n.name.equals(parName)).findFirst(); //try to find parent directory of the file we are adding
-                if (parOpt.isPresent()) {
-                    Directory parDir = (Directory) parOpt.get();
-                    temp.parent = parDir;
-                    parDir.children.add(temp);
-                    break;
-                } else {
-                    Directory d = new Directory();
-                    d.name = parName;
-                    d.children.add(temp);
-                    temp.parent = d;
-                    allElements.add(d);
-
-                    path = path.getParent().toAbsolutePath();
-                    temp = d;
-                }
+            //checking, if the file was already added to the tree
+            Optional<Node> opt = allElements.stream().filter(node -> node.getName().equals(toAddName)).findFirst();
+            if (opt.isPresent()) {
+                f = (FileNode) opt.get();
+                f.update(Files.readAllBytes(path));
             }
-            while (true);
+            else {
+                f = new FileNode(path);
+
+                Node temp = f;
+
+                // adding file to directory structure
+                allElements.add(f);
+                do {
+                    final String parName = path.getParent().toAbsolutePath().toString(); //for lambda
+                    //System.out.println(allElements.get(0).name + " " + parName + "\n");
+                    Optional<Node> parOpt = allElements.stream().filter(n -> n.getName().equals(parName)).findFirst(); //try to find parent directory of the file we are adding
+                    if (parOpt.isPresent()) {
+                        Directory parDir = (Directory) parOpt.get();
+                        temp.setParent(parDir);
+                        parDir.getChildren().add(temp);
+                        break;
+                    } else {
+                        Directory d = new Directory();
+                        d.setName(parName);
+                        d.getChildren().add(temp);
+                        temp.setParent(d);
+                        allElements.add(d);
+
+                        path = path.getParent().toAbsolutePath();
+                        temp = d;
+                    }
+                }
+                while (true);
+            }
 
             // 2)updating hashes
-            Directory tempDir = f.parent;
+            Directory tempDir = f.getParent();
             do {
                 tempDir.updateHash();
-                tempDir = tempDir.parent;
+                tempDir = tempDir.getParent();
             }
             while (tempDir!=null);
 
@@ -113,16 +85,16 @@ public class MerkleTree implements Serializable {
     public void remove (String toRemove) {
         try {
             String toRemoveAbsolute = Paths.get(toRemove).toAbsolutePath().toString();
-            Node elementToRemove = allElements.stream().filter(n -> n.name.equals(toRemoveAbsolute)).findFirst().get();
+            Node elementToRemove = allElements.stream().filter(n -> n.getName().equals(toRemoveAbsolute)).findFirst().get();
             allElements.remove(elementToRemove);
-            Directory tempDir = elementToRemove.parent;
+            Directory tempDir = elementToRemove.getParent();
             do {
-                tempDir.children.remove(elementToRemove);
-                if (tempDir.children.size() == 0 && tempDir!=curRoot)
+                tempDir.getChildren().remove(elementToRemove);
+                if (tempDir.getChildren().size() == 0 && tempDir!=curRoot)
                     allElements.remove(tempDir);
                 else
                     tempDir.updateHash();
-                tempDir = tempDir.parent;
+                tempDir = tempDir.getParent();
             }
             while (tempDir!=null);
         }

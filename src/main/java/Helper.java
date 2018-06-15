@@ -9,21 +9,6 @@ import java.util.List;
 
 public class Helper {
 
-    private static final String SERIALIZATION_PATH = "./.jit/staging/staging.ser";
-
-    static void serialize(Object obj) throws IOException {
-        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(new File(SERIALIZATION_PATH)));
-        out.writeObject(obj);
-        out.close();
-    }
-
-    static Object deserialize() throws IOException, ClassNotFoundException {
-        ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZATION_PATH));
-        Object obj = in.readObject();
-        in.close();
-        return obj;
-    }
-
     static void clearWorkspace() throws IOException{
         Path pathToBeDeleted = Paths.get(".");
         Files.walk(pathToBeDeleted)
@@ -43,8 +28,27 @@ public class Helper {
         });
     }
 
-    static String getSerializationPath() {
-        return SERIALIZATION_PATH;
+    static void restoreDirectory (String hash) {
+        try {
+            List<String> content = Files.readAllLines(Paths.get(PathConstants.getObjectsPath() + hash));
+            content.remove(0);
+            for (String line : content) {
+                String[] childInfo = line.split("  ");
+                System.out.println("Restoring " + childInfo[2]);
+                if (childInfo[0].equals("Directory")) {
+                    Files.createDirectory(Paths.get(childInfo[2]));
+                    restoreDirectory(childInfo[1]);
+                }
+                else {
+                    Files.copy(Paths.get(PathConstants.getObjectsPath() + childInfo[1]), Paths.get(childInfo[2]));
+                }
+            }
+        }
+        catch (IOException ex) {
+            System.out.println("Something went wrong with object files IO.");
+            ex.printStackTrace();
+        }
+
     }
 
     public static String byteArrayToHexString(byte[] content) {
@@ -65,4 +69,5 @@ public class Helper {
         }
         return null;
     }
+
 }
