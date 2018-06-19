@@ -1,14 +1,9 @@
 import java.io.IOException;
 
 /**
- * "Main menu" of Jit, that checks user input from the console and calls corresponding methods.
+ * "Main menu" of Jit. Calls methods, corresponding to user input from the console.
  */
 public class Jit {
-
-    // add comments!
-    //split big code parts
-    //make Commit class??? a lot is done differently, but from the view of polymorphism... as it is it seems more reasonable
-    // Node - to separate file, include ToObjectFile functionality
 
     public static void main(String[] args) {
         try {
@@ -46,9 +41,11 @@ public class Jit {
                         System.out.println("You have to give the hash of the commit.");
             }
         }
+        //if user didn't enter a valid command
         catch (IllegalArgumentException ex) {
             commandHelp();
         }
+        //exceptions from all jit methods (files IO, serialization) are caught here
         catch(IOException ex) {
             System.out.println ("Something went wrong with files input and output.");
             ex.printStackTrace();

@@ -7,11 +7,15 @@ import java.util.List;
 class Directory extends Node {
     private List<Node> children = new LinkedList<Node>();
 
+    /**
+     * Function, that is used to update the value of hash, based on value of children's hashes.
+     */
     void updateHash() {
         String toHash = this.getName() + children.stream().map(Node::getHash).reduce("", (s1, s2) -> s1+s2);
         this.setHash(Helper.byteArrayToHexString(toHash.getBytes()));
     }
 
+    @Override
     void toObjectFile() throws IOException {
         File objectFile = new File (PathConstants.getObjectsPath() + this.getHash());
 
@@ -27,7 +31,7 @@ class Directory extends Node {
         Files.write(objectFile.toPath(), fileContent.getBytes());
     }
 
-    public List<Node> getChildren() {
+    List<Node> getChildren() {
         return children;
     }
 }

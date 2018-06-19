@@ -6,7 +6,7 @@ public class PathConstants {
         return SERIALIZATION_PATH;
     }
 
-    public static String getObjectsPath() {
+    static String getObjectsPath() {
         return OBJECTS_PATH;
     }
 }

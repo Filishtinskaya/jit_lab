@@ -7,8 +7,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Has different relatively independent pieces of functionality.
+ */
 public class Helper {
 
+    /**
+     * Recursively deletes all in current directory except ".jit".
+     * @throws IOException
+     */
     static void clearWorkspace() throws IOException{
         Path pathToBeDeleted = Paths.get(".");
         Files.walk(pathToBeDeleted)
@@ -18,6 +25,7 @@ public class Helper {
                 .forEach(File::delete);
 
         Files.list(Paths.get(".")).filter(p -> !p.toString().endsWith(".jit")).forEach(p -> {
+            //managing exceptions withing lambda function
             try{
                 Files.delete(p);
             }
@@ -28,30 +36,32 @@ public class Helper {
         });
     }
 
-    static void restoreDirectory (String hash) {
-        try {
-            List<String> content = Files.readAllLines(Paths.get(PathConstants.getObjectsPath() + hash));
-            content.remove(0);
-            for (String line : content) {
-                String[] childInfo = line.split("  ");
-                System.out.println("Restoring " + childInfo[2]);
-                if (childInfo[0].equals("Directory")) {
-                    Files.createDirectory(Paths.get(childInfo[2]));
-                    restoreDirectory(childInfo[1]);
-                }
-                else {
-                    Files.copy(Paths.get(PathConstants.getObjectsPath() + childInfo[1]), Paths.get(childInfo[2]));
-                }
+    /**
+     * Recursively iterates throw object files and restores what's in them in the working directory.
+     * @param hash hash of the directory, that we want
+     */
+    static void restoreDirectory (String hash) throws IOException {
+        List<String> content = Files.readAllLines(Paths.get(PathConstants.getObjectsPath() + hash));
+        content.remove(0);
+        for (String line : content) {
+            String[] childInfo = line.split("  ");
+            System.out.println("Restoring " + childInfo[2]);
+            if (childInfo[0].equals("Directory")) {
+                Files.createDirectory(Paths.get(childInfo[2]));
+                restoreDirectory(childInfo[1]);
+            }
+            else {
+                Files.copy(Paths.get(PathConstants.getObjectsPath() + childInfo[1]), Paths.get(childInfo[2]));
             }
         }
-        catch (IOException ex) {
-            System.out.println("Something went wrong with object files IO.");
-            ex.printStackTrace();
-        }
-
     }
 
-    public static String byteArrayToHexString(byte[] content) {
+    /**
+     * Secure hashing. Copypasted from GRIPS.
+     * @param content
+     * @return
+     */
+    static String byteArrayToHexString(byte[] content) {
 
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");

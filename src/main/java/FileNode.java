@@ -11,10 +11,16 @@ class FileNode extends Node {
         update(Files.readAllBytes(path));
     }
 
+    /**
+     * Changes the content of the node and re-counts hash(based on the name and the content).
+     * @param newData new value of node's content
+     */
     void update(byte[] newData) {
         data = newData;
 
         byte[] nameBytes = this.getName().getBytes();
+
+        //Copying two byte arrays into one.
         byte[] toHash = new byte[nameBytes.length + data.length];
         for (int i=0; i<nameBytes.length; i++)
             toHash[i] = nameBytes[i];
@@ -24,12 +30,13 @@ class FileNode extends Node {
         this.setHash(Helper.byteArrayToHexString(toHash));
     }
 
+    @Override
     void toObjectFile() throws IOException {
         File objectFile = new File (PathConstants.getObjectsPath() + this.getHash());
         Files.write(objectFile.toPath(), this.getData());
     }
 
-    public byte[] getData() {
+    byte[] getData() {
         return data;
     }
 }
